@@ -1,10 +1,19 @@
 (use-modules (artanis artanis))
+(load "db.scm")
+(load "session.scm")
 (init-server)
 
-(get "/sessions" #:conn #t
-     (lambda (rc)
-       (let ((mtable (map-table-from-DB (:conn rc))))
-	 (object->string
-	   (mtable 'get 'sessions #:columns '(pid sid))))))
+(get "/session" #:session #t
+  (lambda (rc) 
+    (format #f "Session: ~a" (session-sid rc))))
 
-(run #:use-db? #t #:port 8080)
+(get "/setpid/:pid" #:session #t
+  (lambda (rc) 
+    (session-set rc "pid" (params rc "pid"))
+    (format #f "PID ~a" (params rc "pid"))))
+
+(get "/getpid" #:session #t
+     (lambda (rc)
+       (format #f "PID: ~a" (session-get rc "pid"))))
+
+(run #:port 8080) 
