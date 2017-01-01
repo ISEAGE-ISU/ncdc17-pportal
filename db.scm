@@ -9,5 +9,5 @@
           (row
             (get-row (append rows (cons row '())) (dbi-get_row conn)))
           (else
-	    (dbi-close conn)
+	    ;(dbi-close conn)
             rows))))))
