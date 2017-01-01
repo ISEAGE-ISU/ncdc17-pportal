@@ -2,7 +2,7 @@
 
 (define db-query
   (lambda (query)
-    (let ((conn (dbi-open "postgresql" "jake::jake:tcp:localhost:5432")))
+    (let ((conn (dbi-open "postgresql" "pportal::pportal:tcp:localhost:5432")))
       (dbi-query conn query)
       (let get-row ((rows '()) (row (dbi-get_row conn)))
         (cond

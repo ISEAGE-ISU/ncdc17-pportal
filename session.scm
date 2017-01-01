@@ -9,15 +9,15 @@
 
 (define session-set-sid
   (lambda (sid field value)
-    (if (string-null? (db-query 
+    (if (null? (db-query 
                         (format 
                           #f "SELECT '~a' FROM sessions WHERE sid='~a'"
                           field sid)))
-      (db-query (format #f "INSERT INTO sessions (sid) VALUES '~a')"
+      (db-query (format #f "INSERT INTO sessions (sid) VALUES ('~a')"
                         sid)))
     (let ((res 
             (db-query 
-              (format #f "UPDATE sessions SET '~a'='~a' WHERE sid='~a'"
+              (format #f "UPDATE sessions SET ~a='~a' WHERE sid='~a'"
                       field value sid))))
       (cond
         ((null? res) res)
@@ -25,11 +25,11 @@
 
 (define session-get
   (lambda (rc field)
-    (session-get-sid (session-sid rc))))
+    (session-get-sid (session-sid rc) field)))
 
 (define session-set
   (lambda (rc field value)
-    (session-set-sid (session-sid rc value))))
+    (session-set-sid (session-sid rc) field value)))
 
 (define session-sid
   (lambda (rc)
