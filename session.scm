@@ -11,10 +11,12 @@
   (lambda (sid field value)
     (if (null? (db-query 
                         (format 
-                          #f "SELECT '~a' FROM sessions WHERE sid='~a'"
+                          #f "SELECT ~a FROM sessions WHERE sid='~a'"
                           field sid)))
-      (db-query (format #f "INSERT INTO sessions (sid) VALUES ('~a')"
-                        sid)))
+      (db-query (format 
+		  #f 
+		  "INSERT INTO sessions (sid,~a) VALUES ('~a','~a')"
+                  field sid value)))
     (let ((res 
             (db-query 
               (format #f "UPDATE sessions SET ~a='~a' WHERE sid='~a'"
@@ -35,5 +37,5 @@
   (lambda (rc)
     (let ((s (:session rc 'check-and-spawn)))
       (cond
-        ((string? s) s)
+        ((string? s) (format #t "session-sid: ~a~%" s) s)
         (else "")))))
