@@ -3,8 +3,8 @@
 <% ) %>
 
 <form action="/do_login" method="GET">
-	<label>Patient ID</label>
-	<input type="text" name="pid"/>
+	<label>Username</label>
+	<input type="text" name="uname"/>
 	<label>PIN</label>
 	<input type="password" name="pin"/>
 	<input type="Submit" value="Log in"/>
