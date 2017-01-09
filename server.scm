@@ -10,12 +10,12 @@
     (let ((pid (session-get rc "pid")))
       (format #t "Pid: ~a" pid)
       (cond
-        ((or (not (string? pid)) (string=? pid ""))
-         (let* (
-                (cor #t)
-                (page (tpl->html "login.tpl" (the-environment))))
-           (tpl->response "layout.tpl" (the-environment))))
-        (else (if-logged-in rc))))))
+	((or (not (string? pid)) (string=? pid ""))
+	 (let* (
+		(cor #t)
+		(page (tpl->html "login.tpl" (the-environment))))
+	   (tpl->response "layout.tpl" (the-environment))))
+	(else (if-logged-in rc))))))
 
 (get "/session" #:session #t
      (lambda (rc) 
@@ -29,54 +29,65 @@
 (get "/getpid" #:session #t
      (lambda (rc)
        (require-login rc (lambda (rc) 
-         (format #f "PID: ~a" (session-get rc "pid"))))))
+			   (format #f "PID: ~a" (session-get rc "pid"))))))
 
 (get "/login" #:session #t
      (lambda (rc)
        (let* ((cor (not (params rc "incorrect")))
-              (page (tpl->html "login.tpl" (the-environment))))
-         (tpl->response "layout.tpl" (the-environment)))))
+	      (page (tpl->html "login.tpl" (the-environment))))
+	 (tpl->response "layout.tpl" (the-environment)))))
 
 (get "/" #:session #t
      (lambda (rc)
        (let ((page (tpl->html "index.tpl" (the-environment))))
-         (tpl->response "layout.tpl" (the-environment)))))
+	 (tpl->response "layout.tpl" (the-environment)))))
 
 (get "/logout" #:session #t
      (lambda (rc)
        (session-set rc "pid" "")
        (let ((page (tpl->html "index.tpl" (the-environment))))
-         (tpl->response "layout.tpl" (the-environment)))))
+	 (tpl->response "layout.tpl" (the-environment)))))
 
 (get "/do_login" #:session #t
      (lambda (rc)
        (let* ((pid (params rc "pid"))
-              (pin_cor (let ((res (db-query
-                                    (format #f
-                                            "SELECT pin FROM patients WHERE pid='~a'"
-                                            pid))))
-                         (cond 
-                           ((null? res) "")
-                           (else (cdr (car (car res)))))))
-              (cor (string=?
-                     (params rc "pin")
-                     pin_cor))
-              (page (tpl->html 
-                      (cond (cor "index.tpl") (else "login.tpl"))
-                      (the-environment))))
-         (db-query "SELECT * FROM patients")
-         (format 
-           #t 
-           "pid: ~a pcor: ~a - pin: ~a - cor: ~a~%" 
-           pid pin_cor (params rc "pin") cor)
-         (cond
-           (cor 
-             (session-set rc "pid" pid)
-             (let ((page (tpl->html "index.tpl" (the-environment))))
-               (tpl->response "layout.tpl" (the-environment))))
-           (else
-             (let ((page (tpl->html "login.tpl" (the-environment))))
-               (tpl->response "layout.tpl" (the-environment))))))))
+	      (pin_cor (let ((res (db-query
+				    (format #f
+					    "SELECT pin FROM patients WHERE pid='~a'"
+					    pid))))
+			 (cond 
+			   ((null? res) "")
+			   (else (cdr (car (car res)))))))
+	      (cor (string=?
+		     (params rc "pin")
+		     pin_cor))
+	      (page (tpl->html 
+		      (cond (cor "index.tpl") (else "login.tpl"))
+		      (the-environment))))
+	 (db-query "SELECT * FROM patients")
+	 (format 
+	   #t 
+	   "pid: ~a pcor: ~a - pin: ~a - cor: ~a~%" 
+	   pid pin_cor (params rc "pin") cor)
+	 (cond
+	   (cor 
+	     (session-set rc "pid" pid)
+	     (let ((page (tpl->html "index.tpl" (the-environment))))
+	       (tpl->response "layout.tpl" (the-environment))))
+	   (else
+	     (let ((page (tpl->html "login.tpl" (the-environment))))
+	       (tpl->response "layout.tpl" (the-environment))))))))
+
+(define get_patient_data
+  (lambda (pid data)
+     ; Pull data from the database
+    ))
+
+(get "/showdata/:data" #:session #t
+     (lambda (rc)
+       (let ((data (rc params "data")))
+	 (cond 
+	   ((string=? data "appointments"
 
 
-(run #:port 8080) 
+	 (run #:port 8080) 
