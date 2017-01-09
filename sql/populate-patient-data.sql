@@ -9,14 +9,14 @@ DROP TABLE IF EXISTS medical_issues_base;
 DROP TABLE IF EXISTS medications;
 DROP TABLE IF EXISTS medications_base;
 
-CREATE TABLE pdata_base (id TEXT, fname TEXT, lname TEXT);
-CREATE TABLE pdata (id TEXT, fname TEXT, lname TEXT, pin TEXT);
+CREATE TABLE pdata_base (id TEXT, fname TEXT, lname TEXT, DOB TEXT, ss TEXT);
+CREATE TABLE pdata (id TEXT, fname TEXT, lname TEXT, uname TEXT, pin TEXT);
 
 CREATE TABLE allergies_base (title TEXT, comments TEXT);
 CREATE TABLE allergies (pid TEXT, title TEXT, comments TEXT);
 
-CREATE TABLE appointments_base (pc_title TEXT, pc_eventDate TEXT, pc_comments TEXT,
-	pc_startTime TEXT, pc_endTime TEXT);
+CREATE TABLE appointments_base (pc_title TEXT, pc_eventdate TEXT, pc_comments TEXT,
+	pc_starttime TEXT, pc_endtime TEXT);
 CREATE TABLE appointments (pid TEXT, title TEXT, apptdate TEXT, comments TEXT,
 	starttime TEXT, endtime TEXT);
 
@@ -37,9 +37,15 @@ BEGIN
 	SELECT content::json->'patients' INTO upstream_data
 		FROM http_get(api_url || 'get_patient_data.php');
 
+	SELECT regexp_replace(upstream_data::text, 'DOB', 'dob', 'g')
+		INTO upstream_data;
+
 	DELETE FROM pdata;
-	INSERT INTO pdata (id, fname, lname, pin)
-		SELECT id, fname, lname, (((id::int * 197) % 9000) + 1000)::text 
+	INSERT INTO pdata (id, fname, lname, uname, pin)
+		SELECT id, fname, lname, 
+		lower(fname) || lower(lname) || 
+			substring(substring(dob from '^....') from '..$'),
+		substring(ss from '....$')
 			FROM json_populate_recordset(null::pdata_base, upstream_data);
 
 	DELETE FROM allergies;
@@ -56,15 +62,23 @@ BEGIN
 	DELETE FROM appointments;
 	FOR p IN SELECT id FROM pdata
 	LOOP
-		SELECT content::json->'appointments' INTO upstream_data
+		SELECT content::json->'appointment' INTO upstream_data
 			FROM http_get(api_url || 'get_appointments.php?id=' || p::text);
 
-			INSERT INTO appointments 
-				(pid, title, apptdate, comments, starttime, endtime)
-			SELECT 
-				p, pc_title, pc_eventDate, 
-				pc_comments, pc_startTime, pc_endTime
-			FROM json_populate_recordset(null::appointments_base, upstream_data);
+		SELECT regexp_replace(upstream_data::text, 'pc_eventDate', 
+			'pc_eventdate', 'g') INTO upstream_data;
+		SELECT regexp_replace(upstream_data::text, 'pc_startTime', 
+			'pc_starttime', 'g') INTO upstream_data;
+		SELECT regexp_replace(upstream_data::text, 'pc_endTime', 
+			'pc_endtime', 'g') INTO upstream_data;
+
+
+		INSERT INTO appointments 
+			(pid, title, apptdate, comments, starttime, endtime)
+		SELECT 
+			p, pc_title, pc_eventdate, 
+			pc_comments, pc_starttime, pc_endtime
+		FROM json_populate_recordset(null::appointments_base, upstream_data);
 	END LOOP;
 
 	DELETE FROM medications;
