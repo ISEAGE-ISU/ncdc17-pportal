@@ -98,10 +98,17 @@
                                (format #f "SELECT * FROM ~a WHERE pid='~a'"
                                        dtype pid))))
          (cond 
-           ((not (or
-                   (string=? dtype "appointments")
-                   (string=? dtype "medical_issues")
-                   (string=? dtype "medication"
-
+           ((or
+             (string=? dtype "appointments")
+             (string=? dtype "medical_issues")
+             (string=? dtype "medications")
+             (string=? dtype "allergies"))
+              "400 yo")
+           (else 
+             (let
+               ((page (tpl->html 
+                        (format #f "show-~a.tpl" dtype)
+                        (the-environment))))
+                (tpl->response "layout.tpl" (the-environment)))))))))
 
 (run #:port 8080) 
