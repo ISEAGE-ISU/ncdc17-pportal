@@ -83,7 +83,9 @@
                (tpl->response "layout.tpl" (the-environment))))
            (else
              (let ((page (tpl->html "login.tpl" (the-environment))))
-               (tpl->response "layout.tpl" (the-environment))))))))
+               (response-emit 
+                (tpl->html "layout.tpl" (the-environment))
+                #:status 401)))))))
 
 
 (get "/showdata/:data" #:session #t
