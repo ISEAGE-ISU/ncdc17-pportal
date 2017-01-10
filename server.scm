@@ -17,6 +17,22 @@
            (tpl->response "layout.tpl" (the-environment))))
         (else (if-logged-in rc))))))
 
+(define get-fname
+  (lambda (pid)
+    (let ((res (db-query
+                 (format #f "SELECT fname FROM pdata WHERE id='~a'" pid))))
+      (cond
+        ((null? res) "")
+        (else (cdr (car (car res))))))))
+
+(define get-lname
+  (lambda (pid)
+    (let ((res (db-query
+                 (format #f "SELECT lname FROM pdata WHERE id='~a'" pid))))
+      (cond
+        ((null? res) "")
+        (else (cdr (car (car res))))))))
+
 (get "/session" #:session #t
      (lambda (rc) 
        (format #f "Session: ~a" (session-sid rc))))
@@ -39,13 +55,18 @@
 
 (get "/" #:session #t
      (lambda (rc)
-       (let ((page (tpl->html "index.tpl" (the-environment))))
+       (let* ((lname (get-lname (session-get rc "pid")))
+              (fname (get-fname (session-get rc "pid")))
+              (page (tpl->html "index.tpl" (the-environment))))
          (tpl->response "layout.tpl" (the-environment)))))
 
 (get "/logout" #:session #t
      (lambda (rc)
        (session-set rc "pid" "")
-       (let ((page (tpl->html "index.tpl" (the-environment))))
+       (let* (
+             (lname "")
+             (fname "")
+             (page (tpl->html "index.tpl" (the-environment))))
          (tpl->response "layout.tpl" (the-environment)))))
 
 (get "/do_login" #:session #t
@@ -68,6 +89,8 @@
               (cor (string=?
                      (params rc "pin")
                      pin_cor))
+              (lname (get-lname pid))
+              (fname (get-fname pid))
               (page (tpl->html 
                       (cond (cor "index.tpl") (else "login.tpl"))
                       (the-environment))))
@@ -84,33 +107,30 @@
            (else
              (let ((page (tpl->html "login.tpl" (the-environment))))
                (response-emit 
-                (tpl->html "layout.tpl" (the-environment))
-                #:status 401)))))))
-
-(define pdata_query
-  (lambda (pid data)
-    (db-query (format #f "SELECT * FROM ~a WHERE pid='~a'" data pid))))
-
+                 (tpl->html "layout.tpl" (the-environment))
+                 #:status 401)))))))
 
 (get "/showdata/:data" #:session #t
      (lambda (rc)
-       (let* ((dtype (rc params "data"))
-              (data  (lambda (pid data)
-                             (db-query 
-                               (format #f "SELECT * FROM ~a WHERE pid='~a'"
-                                       dtype pid))))
-         (cond 
-           ((or
-             (string=? dtype "appointments")
-             (string=? dtype "medical_issues")
-             (string=? dtype "medications")
-             (string=? dtype "allergies"))
-              "400 yo")
-           (else 
-             (let
-               ((page (tpl->html 
-                        (format #f "show-~a.tpl" dtype)
-                        (the-environment))))
-                (tpl->response "layout.tpl" (the-environment)))))))))
+       (require-login 
+         rc (lambda (rc) 
+              (let* ((dtype (params rc "data"))
+                     (pid (session-get rc "pid"))
+                     (data (db-query 
+                             (format #f "SELECT * FROM ~a WHERE pid='~a'"
+                                     dtype pid))))
+                (cond 
+                  ((not (or
+                     (string=? dtype "appointments")
+                     (string=? dtype "medical_issues")
+                     (string=? dtype "medications")
+                     (string=? dtype "allergies")))
+                       "400 yo")
+                  (else 
+                    (let
+                      ((page (tpl->html 
+                               (format #f "show-~a.tpl" dtype)
+                               (the-environment))))
+                      (tpl->response "layout.tpl" (the-environment))))))))))
 
 (run #:port 8080) 
