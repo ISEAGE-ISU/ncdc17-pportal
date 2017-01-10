@@ -85,13 +85,23 @@
              (let ((page (tpl->html "login.tpl" (the-environment))))
                (tpl->response "layout.tpl" (the-environment))))))))
 
+(define pdata_query
+  (lambda (pid data)
+    (db-query (format #f "SELECT * FROM ~a WHERE pid='~a'" data pid))))
+
 
 (get "/showdata/:data" #:session #t
      (lambda (rc)
-       (let ((data (rc params "data")))
+       (let* ((dtype (rc params "data"))
+              (data  (lambda (pid data)
+                             (db-query 
+                               (format #f "SELECT * FROM ~a WHERE pid='~a'"
+                                       dtype pid))))
          (cond 
-           ((string=? data "appointments"
-                      ))))))
+           ((not (or
+                   (string=? dtype "appointments")
+                   (string=? dtype "medical_issues")
+                   (string=? dtype "medication"
 
 
-                      (run #:port 8080) 
+(run #:port 8080) 
